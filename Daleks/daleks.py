@@ -80,6 +80,17 @@ for lI in range(gDalekCount):
 		print("Oops.")
 	gDalekPositions.append(lPos)
 
+def getFreePosition(): # TODO: use more often :)
+	global gDalekPositions, gDalekPositionsExterminated, gPlayerPosition, gTilesX, gTilesY
+	while positionIsUsed(lPos:=pygame.Vector2(int(random.randrange(int(0), int(gTilesX-1))), int(random.randrange(int(0), int(gTilesY-1))))):
+		print("Oops.")
+	print("Got it: " + str(lPos))
+	return lPos
+	
+
+def teleport():
+	global gPlayerPosition
+	gPlayerPosition=getFreePosition()
 
 def sonic():
 	global gDalekPositions, gDalekPositionsExterminated, gPlayerPosition, gSonicScrewdriversCount
@@ -166,6 +177,7 @@ while gRunning:
 				sonic()
 			if lKeys[pygame.K_t]:
 				print("01 teleport with tardis")
+				teleport()
 
 
 			# Limit movement of player #TODO use playerCanMoveTo()
@@ -217,6 +229,7 @@ while gRunning:
 			for lDalekPosition in gDalekPositions:
 					if (isPositionEqual(lDalekPosition, gPlayerPosition)):
 						print("GAME OVER")
+						gRunning=False
 
 
 			# Draw!
@@ -226,6 +239,7 @@ while gRunning:
 	gClock.tick(30)  # limit FPS
 
 # The End
+time.sleep(10)
 pygame.quit()
 
 
