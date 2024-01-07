@@ -8,23 +8,27 @@ pygame.init()
 gScreenSizeX=640
 gScreenSizeY=480
 gTileSize=40
+gStatusBarSize=gTileSize
 gTilesX=gScreenSizeX/gTileSize
-gTilesY=gScreenSizeY/gTileSize
+gTilesY=gScreenSizeY/gTileSize - 1 # Reserve one row for status bar
 gRunning = True
 gColorBackground="white"
 gColorText="white"
 gColorGrid="grey"
-gFontSize=36
-gFont = pygame.font.Font(pygame.font.get_default_font(), gFontSize)
+gColorStatusBar="grey"
+gFontSize=18
 gScoreLeft=0
 gDalekCount=5 # how much should be on-screen at start #TODO: Limit to tile-count...
 gDalekPositions=list()
 gDalekPositionsExterminated=list()
 gSonicScrewdriversCount=1
+gInitDalekCount=-1
+gScore=0
 
 # pygame setup
 gScreen = pygame.display.set_mode((gScreenSizeX, gScreenSizeY))
 gClock = pygame.time.Clock()
+gFont = pygame.font.Font(pygame.font.get_default_font(), gFontSize)
 
 # Load resources
 gDalekImage=pygame.image.load('images/dalek_38px.png')
@@ -32,6 +36,14 @@ gDalekImageExterminated=pygame.image.load('images/dalek_exterminated_38px.png')
 gPlayerImage=pygame.image.load('images/tardis_38px.png')
 gSonicScrewdriverImage=pygame.image.load('images/sonic_screwdriver_38px.png')
 gTeleportImage=pygame.image.load('images/teleport_38px.png')
+
+# Functions
+def drawText(aScreen, aText, aColor, aPosition):
+    global gScreenSizeX, gScreenSizeY, gFontSize, gFont
+    lTextSurface = gFont.render(str(aText), True, aColor)
+#    gScreen.blit(lTextSurface, dest=(gScreenSizeX/2-(lTextSurface.get_width() /2), gFontSize))
+    gScreen.blit(lTextSurface, dest=aPosition)
+ 
 
 #def calculateUnusedPosition():
 #	while 
@@ -70,15 +82,14 @@ def playerCanMoveTo(aPos):
 	print("lReturnValue: " + str(lReturnValue))
 	return lReturnValue
 
-# Init Player Position
-gPlayerPosition=pygame.Vector2(int(random.randrange(0, int(gTilesX-1) )), int(random.randrange(0, int(gTilesY-1) )))
-	
-# Init Dalek-Positions
-for lI in range(gDalekCount):
-	#lPos=pygame.Vector2(int(random.randrange(0,gTilesX-1)), int(random.randrange(0,gTilesY-1))
-	while positionIsUsed(lPos:=pygame.Vector2(int(random.randrange(int(0), int(gTilesX-1))), int(random.randrange(int(0), int(gTilesY-1))))):
-		print("Oops.")
-	gDalekPositions.append(lPos)
+def initDalekPositions():
+	global gDalekCount, gInitDalekCount, gTilesX, gTilesY, gDalekPositions
+	gInitDalekCount=gDalekCount
+	for lI in range(gDalekCount):
+		#lPos=pygame.Vector2(int(random.randrange(0,gTilesX-1)), int(random.randrange(0,gTilesY-1))
+		while positionIsUsed(lPos:=pygame.Vector2(int(random.randrange(int(0), int(gTilesX-1))), int(random.randrange(int(0), int(gTilesY-1))))):
+			print("Oops.")
+		gDalekPositions.append(lPos)
 
 def getFreePosition(): # TODO: use more often :)
 	global gDalekPositions, gDalekPositionsExterminated, gPlayerPosition, gTilesX, gTilesY
@@ -86,6 +97,14 @@ def getFreePosition(): # TODO: use more often :)
 		print("Oops.")
 	print("Got it: " + str(lPos))
 	return lPos
+
+
+# Init Player Position
+gPlayerPosition=pygame.Vector2(int(random.randrange(0, int(gTilesX-1) )), int(random.randrange(0, int(gTilesY-1) )))
+
+# Init Dalek-Positions
+initDalekPositions()
+
 	
 
 def teleport():
@@ -93,7 +112,7 @@ def teleport():
 	gPlayerPosition=getFreePosition()
 
 def sonic():
-	global gDalekPositions, gDalekPositionsExterminated, gPlayerPosition, gSonicScrewdriversCount
+	global gDalekPositions, gDalekPositionsExterminated, gPlayerPosition, gSonicScrewdriversCount, gScore
 	print('Sonic player: ' + str(gPlayerPosition))
 	gSonicScrewdriversCount=gSonicScrewdriversCount-1
 	if gSonicScrewdriversCount>=0:
@@ -101,11 +120,13 @@ def sonic():
 			if abs(lDalekPosition.x - gPlayerPosition.x)==1:
 				gDalekPositionsExterminated.append(lDalekPosition)
 				gDalekPositions.remove(lDalekPosition)
+				gScore=gScore+1
 				print('Sonic dalek (x): ' + str(lDalekPosition))
 		for lDalekPosition in gDalekPositions:
 			if abs(lDalekPosition.y - gPlayerPosition.y)==1:
 				gDalekPositionsExterminated.append(lDalekPosition)
 				gDalekPositions.remove(lDalekPosition)
+				gScore=gScore+1
 				print('Sonic dalek (y): ' + str(lDalekPosition))
 	else:
 		print('No screwdrivers left');
@@ -119,14 +140,23 @@ def drawPlayingField():
 	gScreen.fill(gColorBackground)
 
 	# Draw Grid
-	for lX in range(0, gScreenSizeX, gTileSize):
+	for lX in range(0, gScreenSizeX-1, gTileSize):
 		lUpperPosition=pygame.Vector2(lX, 0)
-		lLowerPosition=pygame.Vector2(lX, gScreenSizeY-1)
+		lLowerPosition=pygame.Vector2(lX, gScreenSizeY-1-gStatusBarSize)
 		pygame.draw.line(gScreen, gColorGrid, lUpperPosition, lLowerPosition)
-	for lY in range(0, gScreenSizeX, gTileSize):
+	for lY in range(0, gScreenSizeY-gStatusBarSize, gTileSize):
 		lLeftPosition=pygame.Vector2(0, lY)
 		lRightPosition=pygame.Vector2(gScreenSizeX-1, lY)
 		pygame.draw.line(gScreen, gColorGrid, lLeftPosition, lRightPosition)
+	
+	# Draw Status Bar
+	lLeftPosition=pygame.Vector2(0, gScreenSizeY-gStatusBarSize)
+	lRightPosition=pygame.Vector2(gScreenSizeX-0, gScreenSizeY-1)
+	pygame.draw.rect(gScreen, gColorStatusBar, (lLeftPosition, lRightPosition))
+	
+	# Status for Status bar
+	lStatusPosition=pygame.Vector2(0, gScreenSizeY-gTileSize)
+	drawText(gScreen, "Sonic Screwdrivers left: " + str(gSonicScrewdriversCount) + " - " + "Score: " + str(gScore), gColorText, lStatusPosition)
 	
 	# Draw Player
 	lPlayerPosition=pygame.Vector2(gPlayerPosition.x*gTileSize, gPlayerPosition.y*gTileSize)
@@ -214,14 +244,18 @@ while gRunning:
 					if (l1!=l2 and isPositionEqual(lDalekPosition1, lDalekPosition2)):
 						gDalekPositionsExterminated.append(lDalekPosition1)
 						gDalekPositions.remove(lDalekPosition1)
+						gScore=gScore+1
 						print("This Daleks collided: " + str(lDalekPosition1) + "(" + str(l1) + ")" + str(lDalekPosition2) + "(" + str(l2) + ")")
 				l2=-1
 			
 			# Check Collision of (living and exterminated) Daleks
+			print("gDalekPositions: " + str(gDalekPositions))
+			print("gDalekPositionsExterminated: " + str(gDalekPositionsExterminated))
 			for lDalekPosition1 in gDalekPositions:
 				for lDalekPosition2 in gDalekPositionsExterminated:
 					if (isPositionEqual(lDalekPosition1, lDalekPosition2)):
 						gDalekPositions.remove(lDalekPosition1)
+						gScore=gScore+1
 						print("This Dalek (1) collided with exterminated dalek (2): " + str(lDalekPosition1) + str(lDalekPosition2) )
 
 			
@@ -231,6 +265,13 @@ while gRunning:
 						print("GAME OVER")
 						gRunning=False
 
+			# Check if Daleks left
+			if len(gDalekPositions) == 0:
+				print("Next level!")
+				gDalekCount=gInitDalekCount+1
+				initDalekPositions()
+				gDalekPositionsExterminated=list()
+				gSonicScrewdriversCount=1
 
 			# Draw!
 			drawPlayingField()
